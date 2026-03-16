@@ -1,0 +1,53 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores student profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "phone": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Order": {
+      "title": "Moving Order",
+      "description": "Stores details of a moving and storage order.",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string" },
+        "studentUid": { "type": "string" },
+        "studentName": { "type": "string" },
+        "studentEmail": { "type": "string" },
+        "phone": { "type": "string" },
+        "dormName": { "type": "string" },
+        "roomNumber": { "type": "string" },
+        "pickupDate": { "type": "string", "format": "date" },
+        "deliveryAddress": { "type": "string" },
+        "deliveryDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "picked_up", "stored", "delivered", "cancelled"] },
+        "paymentStatus": { "type": "string", "enum": ["pending", "paid", "failed"] },
+        "boxCount": { "type": "integer" },
+        "largeItemCount": { "type": "integer" },
+        "storageMonths": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "totalAmount": { "type": "number" }
+      },
+      "required": ["studentUid", "dormName", "pickupDate", "status", "boxCount"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Moving and storage orders"
+    }
+  }
+}

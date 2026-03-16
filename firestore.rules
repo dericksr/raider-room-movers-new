@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required, email format)
+    //   - displayName: string
+    //   - phone: string
+    //   - createdAt: timestamp
+    //
+    // Collection: orders
+    // Document ID: {orderId}
+    // Fields:
+    //   - studentUid: string (required)
+    //   - studentName: string
+    //   - studentEmail: string
+    //   - studentPhone: string
+    //   - dormName: string (required)
+    //   - roomNumber: string
+    //   - pickupDate: string (required)
+    //   - deliveryAddress: string
+    //   - deliveryDate: string
+    //   - status: string (required, enum)
+    //   - createdAt: timestamp
+    //   - totalAmount: number
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.studentUid;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidStatus(status) {
+      return status in ['pending', 'confirmed', 'picked_up', 'stored', 'delivered', 'cancelled'];
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "derickrosattu@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'phone', 'createdAt', 'role']) &&
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email) &&
+             (data.role == 'client' || isAdmin());
+    }
+
+    function isValidOrder(data) {
+      return hasOnlyAllowedFields(['studentUid', 'studentName', 'studentEmail', 'phone', 'dormName', 'roomNumber', 'pickupDate', 'deliveryAddress', 'deliveryDate', 'status', 'createdAt', 'totalAmount', 'boxCount', 'largeItemCount', 'storageMonths', 'paymentStatus']) &&
+             data.studentUid == request.auth.uid &&
+             data.dormName is string && data.dormName.size() > 0 && data.dormName.size() < 100 &&
+             data.pickupDate is string &&
+             data.boxCount is int && data.boxCount >= 3 &&
+             isValidStatus(data.status);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid) && isValidUser(request.resource.data);
+      allow update: if isOwner(uid) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role;
+    }
+
+    match /orders/{orderId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidOrder(request.resource.data);
+      allow update: if (isDocOwner() && isValidOrder(request.resource.data)) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #E90802;
+  --color-secondary: #000000;
+  --color-accent: #757575;
+  --color-surface: #EDEDED;
+  --color-dark: #333333;
+  
+  --font-sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-serif: "Libre Baskerville", serif;
+}
+
+@layer base {
+  body {
+    @apply bg-white text-dark antialiased;
+  }
+}
+
+.glass-card {
+  @apply bg-white/80 backdrop-blur-md border border-black/5 shadow-sm;
+}
+
+.btn-primary {
+  @apply bg-primary text-white px-6 py-3 rounded-none font-bold uppercase tracking-wider transition-all hover:bg-black active:scale-95;
+}
+
+.btn-outline {
+  @apply border-2 border-primary text-primary px-6 py-3 rounded-none font-bold uppercase tracking-wider transition-all hover:bg-primary hover:text-white active:scale-95;
+}
